@@ -1,0 +1,63 @@
+# System Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+client/node_modules/
+server/node_modules/
+
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.so
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build Outputs
+dist/
+build/
+client/dist/
+client/build/
+
+# Large Archives and Datasets
+*.zip
+*.tar
+*.gz
+*.rar
+server/archive/
+server/archive.zip
+archive/
+
+# ML Models (keep small ones if needed, but usually ignore large checkpoints)
+*.pt
+*.pth
+*.h5
+*.weights
+server/ml_engine/runs/
+!server/yolov8n-cls.pt
+# Keep the small pretrained model if critical, but ignore general PT files if they are huge training checkpoints
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+server/agriculture.db
+server/db.sqlite
+
+# Logs
+*.log
+logs/
