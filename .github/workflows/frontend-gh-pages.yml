@@ -1,5 +1,11 @@
 name: Deploy Frontend to GitHub Pages
 
+# Request permissions so the workflow token can push the gh-pages branch
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ "main" ]
@@ -10,6 +16,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # ensure the GITHUB_TOKEN is available for subsequent pushes
+          persist-credentials: true
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -25,5 +34,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
+          # use the built-in GITHUB_TOKEN; repository must allow workflows to write
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./client/dist
