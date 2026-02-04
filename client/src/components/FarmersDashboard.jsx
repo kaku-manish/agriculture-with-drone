@@ -42,6 +42,14 @@ const FarmersDashboard = () => {
         </div>
     );
 
+    const getImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const cleanPath = path.replace(/\\/g, '/');
+        const filename = cleanPath.split('/').pop();
+        return `http://localhost:3000/uploads/${filename}`;
+    };
+
     const latest_iot = data?.latest_iot || null;
     const latest_drone = data?.latest_drone || null;
     const recommendation = data?.recommendation || null;
@@ -67,7 +75,7 @@ const FarmersDashboard = () => {
                 </div>
 
                 {/* 2. Disease Analysis */}
-                <div className="bg-gradient-to-br from-pink-50 to-white rounded-[2rem] p-6 shadow-xl shadow-pink-500/5 border border-white/50 relative overflow-hidden">
+                <div className="bg-gradient-to-br from-pink-50 to-white rounded-[2rem] p-6 shadow-xl shadow-pink-500/5 border border-white/50 relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-pink-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
                     <h3 className="text-lg font-bold text-gray-700 flex items-center mb-6 relative z-10">
                         <span className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center mr-3 text-sm">🔬</span>
@@ -75,33 +83,44 @@ const FarmersDashboard = () => {
                     </h3>
 
                     {latest_drone ? (
-                        <div className="relative z-10">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">IDENTIFIED DISEASE</p>
-                            <div className="flex items-center space-x-2 mb-4">
-                                <span className="text-2xl text-red-500">🛡️</span>
-                                <h2 className="text-2xl font-black text-gray-800">
-                                    {latest_drone.disease_type ? t(latest_drone.disease_type.toLowerCase().replace(/ /g, '_')) : latest_drone.disease_type}
-                                </h2>
+                        <div className="relative z-10 flex flex-col flex-1">
+                            <div className="flex gap-4 mb-4 flex-col lg:flex-row">
+                                {/* Dashboard Image Preview */}
+                                <div className="w-full lg:w-32 h-32 rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-white shrink-0">
+                                    <img
+                                        src={getImageUrl(latest_drone.annotated_image_reference || latest_drone.image_reference)}
+                                        className="w-full h-full object-cover"
+                                        alt="Analyzed Crop"
+                                    />
+                                </div>
+
+                                <div className="flex-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">IDENTIFIED DISEASE</p>
+                                    <div className="flex items-center space-x-2 mb-2">
+                                        <span className="text-xl text-red-500">🛡️</span>
+                                        <h2 className="text-xl font-black text-gray-800 break-words">
+                                            {latest_drone.disease_type ? t(latest_drone.disease_type.toLowerCase().replace(/ /g, '_')) : latest_drone.disease_type}
+                                        </h2>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase ${getSeverityColor(latest_drone.severity)}`}>
+                                        {latest_drone.severity || 'HIGH'} Severity
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="bg-white/60 p-4 rounded-xl border border-white/50 shadow-sm backdrop-blur-sm">
+                            <div className="bg-white/60 p-4 rounded-xl border border-white/50 shadow-sm backdrop-blur-sm mt-auto">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm font-bold text-gray-600">AI Confidence {latest_drone.confidence}%</span>
-                                    <span className={`px-3 py-1 rounded text-xs font-bold text-white uppercase ${getSeverityColor(latest_drone.severity)}`}>
-                                        {latest_drone.severity || 'HIGH'}
-                                    </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: `${latest_drone.confidence || 0}%` }}></div>
                                 </div>
                             </div>
-
-                            <p className="mt-4 text-xs font-bold text-gray-400 uppercase">SEVERITY: <span className="text-orange-500">{latest_drone.severity}</span></p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-40 opacity-40">
                             <div className="text-4xl mb-2">🔍</div>
-                            <p className="text-xs font-bold uppercase">No Analysis Data</p>
+                            <p className="text-xs font-bold uppercase">{t('no_analysis_data', 'No Analysis Data')}</p>
                         </div>
                     )}
                 </div>

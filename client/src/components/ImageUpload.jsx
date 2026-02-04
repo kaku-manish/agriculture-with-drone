@@ -124,8 +124,9 @@ const ImageUpload = ({ onAnalysisComplete, farmId, defaultMode = 'upload', allow
                 }
             });
 
-            setResult(res.data.result);
-            if (onAnalysisComplete) onAnalysisComplete();
+            const analysisResult = res.data.result;
+            setResult(analysisResult);
+            if (onAnalysisComplete) onAnalysisComplete(analysisResult);
         } catch (err) {
             console.error(err);
 

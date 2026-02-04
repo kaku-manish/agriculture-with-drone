@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ onGenerateReport }) => {
     const { t } = useTranslation();
     const [farmers, setFarmers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,6 +45,7 @@ const AdminDashboard = () => {
                                 <th className="px-6 py-3">Field Size</th>
                                 <th className="px-6 py-3">{t('crop_info')}</th>
                                 <th className="px-6 py-3">{t('joined')}</th>
+                                <th className="px-6 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -93,11 +94,20 @@ const AdminDashboard = () => {
                                         <td className="px-6 py-4">
                                             {new Date(farmer.created_at).toLocaleDateString()}
                                         </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button
+                                                onClick={() => onGenerateReport(farmer)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black py-2 px-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-widest flex items-center mx-auto"
+                                            >
+                                                <span className="mr-2">📄</span>
+                                                Generate Report
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                                         {t('no_farmers_registered')}
                                     </td>
                                 </tr>

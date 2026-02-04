@@ -1,4 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from "react";
+
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Login from './pages/Login';
@@ -20,21 +22,58 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// Small banner component to show backend connection status (only on login/signup)
+const BackendStatusBar = ({ statusText }) => {
+  const location = useLocation();
+  const show = location.pathname === "/login" || location.pathname === "/signup";
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 12,
+      left: 12,
+      right: 12,
+      padding: "10px 12px",
+      borderRadius: 10,
+      background: "#ffffff",
+      boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
+      fontSize: 14,
+      zIndex: 9999
+    }}>
+      <b>Backend:</b> {statusText}
+    </div>
+  );
+};
+
 const App = () => {
+  const [backendStatus, setBackendStatus] = useState("Checking connection...");
+
+  useEffect(() => {
+    fetch("http://localhost:3000/api/health")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        // if your API returns { message: "..."} we show it
+        setBackendStatus(data?.message || "Connected ✅");
+      })
+      .catch((err) => {
+        console.error("Backend connection error:", err);
+        setBackendStatus("❌ Not connected (check backend running / CORS / URL)");
+      });
+  }, []);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BackendStatusBar statusText={backendStatus} />
+
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* 
-            Unified Dashboard Route 
-            The Dashboard component now handles:
-            - Full screen layout
-            - Sidebar
-            - Role-based navigation (Admin vs User)
-            - Internal routing via tabs
-        */}
+        {/* Unified Dashboard Route */}
         <Route
           path="/admin"
           element={

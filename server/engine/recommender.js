@@ -8,11 +8,16 @@ function generateRecommendation(farm, iot, drone, kbCrops, kbDiseases) {
         medicine_suggestion: "None",
         medicine_secondary: "None",
         dosage: "N/A",
-        preventive_measures: "None",
-        timeline: "None"
+        preventive_measures: "Monitor regularly",
+        timeline: "Monitor regularly",
+        // New fields for UI
+        confidence: 0,
+        severity: "Low",
+        image_reference: null,
+        annotated_image_reference: null // If available
     };
 
-    // 1. Crop Suggestion (if no crop or early stage)
+    // 1. Crop Suggestion
     if (farm.current_crop === 'None' || farm.current_crop === '') {
         const soilRec = kbCrops.find(c => c.soil_type === farm.soil_type);
         if (soilRec) {
@@ -33,12 +38,16 @@ function generateRecommendation(farm, iot, drone, kbCrops, kbDiseases) {
         }
     }
 
-    // 3. Disease & Medicine
+    // 3. Disease & Medicine & Image Data
     if (drone) {
         recommendation.disease_detected = drone.disease_type;
+        recommendation.confidence = drone.confidence || 0;
+        recommendation.severity = drone.severity || "Unknown";
+        // Ensure paths are web-accessible if they are relative
+        recommendation.image_reference = drone.image_reference;
+        recommendation.annotated_image_reference = drone.annotated_image_reference;
 
-        // Normalize for lookup (lowercase, replace underscores with spaces if needed for fuzzy, or keep simple)
-        // We will try exact match, then case-insensitive, then snake_case fallback
+        // Normalize for lookup
         const normalize = (str) => str.toLowerCase().replace(/_/g, ' ').trim();
         const target = normalize(drone.disease_type);
 
@@ -54,9 +63,11 @@ function generateRecommendation(farm, iot, drone, kbCrops, kbDiseases) {
             recommendation.dosage = diseaseRule.dosage;
             recommendation.preventive_measures = diseaseRule.preventive_measures;
             recommendation.timeline = diseaseRule.timeline;
-        } else if (drone.disease_type !== 'Healthy') {
+        } else if (drone.disease_type !== 'Healthy' && drone.disease_type !== 'Normal') {
             recommendation.medicine_suggestion = "Consult local expert";
             recommendation.dosage = "N/A";
+            recommendation.preventive_measures = "Quarantine affected area";
+            recommendation.timeline = "Immediate action required";
         }
     }
 

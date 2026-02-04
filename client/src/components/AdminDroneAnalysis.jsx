@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import axios from 'axios';
 
 const AdminDroneAnalysis = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
+    const [reportSent, setReportSent] = useState(false);
 
     // Simulate Bluetooth Connection Success
     const handleConnectDrone = () => {
@@ -13,6 +16,24 @@ const AdminDroneAnalysis = () => {
             setIsConnecting(false);
             setIsConnected(true);
         }, 2000);
+    };
+
+    const handleGenerateReport = async () => {
+        setGeneratingPdf(true);
+        try {
+            await axios.post('http://localhost:3000/reports/create', {
+                farm_id: 1, // Default/Mock ID or pass as prop
+                title: `Drone Analysis Report - ${new Date().toLocaleDateString()}`,
+                type: 'pdf'
+            });
+            setReportSent(true);
+            setTimeout(() => setReportSent(false), 3000); // Reset after 3s
+        } catch (err) {
+            console.error("Failed to generate report", err);
+            alert("Failed to send report");
+        } finally {
+            setGeneratingPdf(false);
+        }
     };
 
     if (!isConnected) {
@@ -117,8 +138,28 @@ const AdminDroneAnalysis = () => {
                         </div>
 
                         <div className="flex justify-end">
-                            <button className="flex items-center text-xs font-bold text-red-400 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-full transition-colors uppercase tracking-wider">
-                                <span className="mr-1">📄</span> Convert to PDF &gt;
+                            <button
+                                onClick={handleGenerateReport}
+                                disabled={generatingPdf || reportSent}
+                                className={`flex items-center text-xs font-bold px-4 py-2 rounded-full transition-all uppercase tracking-wider ${reportSent
+                                        ? 'bg-green-100 text-green-600 cursor-default'
+                                        : 'text-red-400 bg-red-50 hover:bg-red-100'
+                                    }`}
+                            >
+                                {generatingPdf ? (
+                                    <>
+                                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                                        Generating...
+                                    </>
+                                ) : reportSent ? (
+                                    <>
+                                        <span className="mr-1">✓</span> Sent to User
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="mr-1">📄</span> Convert to PDF &gt;
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

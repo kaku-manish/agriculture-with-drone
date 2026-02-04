@@ -6,23 +6,39 @@ import numpy as np
 
 def validate_crop_image(img_path):
     """
-    Validation is now bypassed to allow ALL images for the demo/user experience.
-    We will let the ML model handle the actual classification.
+    Validates if an image appears to be a crop/plant (specifically paddy).
+    Heuristics:
+    1. Check for dominant Green color (Hue range in HSV).
+    2. Check for some Edge complexity (not a blank or solid image).
     """
     try:
-        # Read image just to verify it's a valid file
+        if not os.path.exists(img_path):
+             return False, "File not found"
+
         img = cv2.imread(img_path)
         if img is None:
             return False, "Unable to read image file. Please upload a valid JPG or PNG."
+
+        # Convert to HSV
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        # Calculate Green Pixel Ratio
+        # Green Hue range typically [35, 85]
+        lower_green = np.array([30, 40, 40])
+        upper_green = np.array([90, 255, 255])
         
-        # We perform NO heuristic checks (color, edges, etc.)
-        # This ensures the user is never blocked by "Invalid Paddy Crop" errors.
-        
-        return True, "✅ Image accepted for analysis"
+        mask = cv2.inRange(hsv, lower_green, upper_green)
+        green_ratio = np.count_nonzero(mask) / (img.shape[0] * img.shape[1])
+
+        # Threshold: At least 15% of the image should be greenish for a close-up crop shot
+        # or even 10% for wider shots.
+        if green_ratio < 0.10:
+             return False, f"Not enough greenery ({int(green_ratio*100)}%). This does not look like a paddy crop."
+
+        return True, "✅ Valid paddy crop image detected"
         
     except Exception as e:
-        # Even if something crashes, we allow it to proceed
-        return True, f"⚠️ Validation skipped: {str(e)}"
+        return False, f"Validation error: {str(e)}"
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

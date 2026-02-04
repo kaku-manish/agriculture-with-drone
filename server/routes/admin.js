@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const auth = require('../middleware/authMiddleware');
 
-// GET /admin/farmers
-// Returns list of all users with role 'farmer' and their farm details
-router.get('/farmers', (req, res) => {
-    // Join users and farms tables
+// 🔒 GET /admin/farmers (ADMIN ONLY)
+router.get('/farmers', auth("admin"), (req, res) => {
     const sql = `
         SELECT 
             u.id as user_id, 
@@ -34,9 +33,8 @@ router.get('/farmers', (req, res) => {
     });
 });
 
-// GET /admin/drone-analysis
-// Returns all drone analysis records with farmer names
-router.get('/drone-analysis', (req, res) => {
+// 🔒 GET /admin/drone-analysis (ADMIN ONLY)
+router.get('/drone-analysis', auth("admin"), (req, res) => {
     const sql = `
         SELECT 
             da.*, 

@@ -91,6 +91,20 @@ function runPredictionScript(imagePath) {
     });
 }
 
+// GET /drone/history/:farmId
+router.get('/history/:farmId', (req, res) => {
+    const farmId = req.params.farmId;
+    const sql = `SELECT * FROM drone_analysis WHERE farm_id = ? ORDER BY analysis_date DESC`;
+
+    db.all(sql, [farmId], (err, rows) => {
+        if (err) {
+            console.error("Error fetching drone history:", err.message);
+            return res.status(500).json({ error: 'Failed to fetch history' });
+        }
+        res.json({ history: rows });
+    });
+});
+
 // POST /drone/analysis (Now supports multipart/form-data for image)
 router.post('/analysis', upload.single('image'), async (req, res) => {
     // 1. Handle File Upload
@@ -146,25 +160,31 @@ router.post('/analysis', upload.single('image'), async (req, res) => {
             } else {
                 disease_type = prediction.disease || 'Unknown';
                 // Use actual confidence from ML
-                const confidence = prediction.confidence ? (prediction.confidence * 100).toFixed(1) : 0;
                 // High severity if > 75% confidence, else Medium/Low
                 severity = prediction.confidence > 0.75 ? 'HIGH' : (prediction.confidence > 0.4 ? 'MEDIUM' : 'LOW');
-
-                // Use annotated image if available
-                if (prediction.annotated_image) {
-                    // Path returned by python is absolute, we need relative for frontend serving if possible
-                    // Python saves it in same dir as input. Input is 'server/uploads/image.jpg'
-                    // Frontend expects 'http://localhost:3000/uploads/image_analyzed.jpg'
-                    // The 'image_reference' saved in DB is usually the path string.
-                    // We should store the annotated path in a new column or replace image_reference (but we want both).
-                    // Let's store ONLY the original in 'image_reference' for now, and new column 'annotated_image_reference'.
-                    // Wait, DB schema update needed first.
-                }
             }
 
             // Extract extra data
             const confidence = prediction.confidence || 0;
             const annotated_image_ref = prediction.annotated_image || image_reference; // Fallback to original
+
+            // CONFIDENCE THRESHOLD CHECK
+            // If confidence is too low (e.g., < 40%), we assume it's noise/non-paddy and DO NOT save to history.
+            if (confidence < 0.40) {
+                console.log(`Low confidence detection (${(confidence * 100).toFixed(1)}%). Skipping DB save.`);
+                // We still return the result to the user so they see "Unknown/Low Confidence" but it won't clutter history.
+                return res.json({
+                    message: 'Analysis completed (Low Confidence - Not Saved)',
+                    analysis_id: null,
+                    result: {
+                        disease_type: 'Unknown / Low Confidence',
+                        severity: 'LOW',
+                        confidence: confidence,
+                        image_reference,
+                        annotated_image_reference: image_reference
+                    }
+                });
+            }
 
             // 3. Save to Database (Updated Schema)
             const sql = `INSERT INTO drone_analysis (farm_id, disease_type, severity, image_reference, confidence, annotated_image_reference) 

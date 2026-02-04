@@ -115,11 +115,11 @@ const AdminSettings = () => {
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-6 text-white shadow-lg">
                 <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">⚙️</span>
+                        <span className="text-2xl">💊</span>
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold">Advanced Settings</h2>
-                        <p className="text-gray-400 text-sm">System configuration and price management</p>
+                        <h2 className="text-2xl font-bold">Medicine Catalog</h2>
+                        <p className="text-gray-400 text-sm">Manage medicine prices and agricultural inventory</p>
                     </div>
                 </div>
             </div>

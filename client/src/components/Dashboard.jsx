@@ -14,7 +14,10 @@ import EditProfileModal from './EditProfileModal';
 import Home from './Home';
 import AgriChatbot from './AgriChatbot';
 import AdminSettings from './AdminSettings';
-import AdminDroneAnalysis from './AdminDroneAnalysis';
+import DiseaseHistory from './DiseaseHistory';
+import Reports from './Reports';
+import AdminReportGenerator from './AdminReportGenerator';
+import AdminDroneReportControl from './AdminDroneReportControl';
 import drone_bg from '../assets/drone_bg.png';
 
 const Dashboard = () => {
@@ -24,6 +27,11 @@ const Dashboard = () => {
     const [farmId, setFarmId] = useState(null);
     const [farmData, setFarmData] = useState(null);
     const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+
+    const [selectedFarmerForReport, setSelectedFarmerForReport] = useState(null);
+
+    // Sidebar State
+    const [expandedMenus, setExpandedMenus] = useState({});
 
     // Shared State for Analysis Results
     const [recommendation, setRecommendation] = useState(null);
@@ -62,9 +70,7 @@ const Dashboard = () => {
     };
 
     const handleAnalysisComplete = () => {
-        // Refresh data to get the new recommendation
         fetchFarmData();
-        // Automatically switch to Action Plan tab to show results
         setActiveTab('Action Plan & Treatments');
     };
 
@@ -73,31 +79,86 @@ const Dashboard = () => {
         setActiveTab('Dashboard');
     };
 
+    const toggleMenu = (menuName) => {
+        setExpandedMenus(prev => ({
+            ...prev,
+            [menuName]: !prev[menuName]
+        }));
+    };
+
     const role = user?.role || 'farmer';
 
     const menuItems = role === 'admin' ? [
         { name: 'Home', icon: 'home' },
         { name: 'Dashboard', icon: 'grid' },
         { name: 'User Controls', icon: 'users' },
-        { name: 'IoT Sensors', icon: 'rss' },
-        { name: 'Disease Analysis', icon: 'microscope' },
-        { name: 'Action Plan & Treatments', icon: 'clipboard' },
-        { name: 'Manual Disease Check', icon: 'upload' },
-        { name: 'Start Live Camera', icon: 'camera' },
-        { name: 'Crop Advisory & Soil Guide', icon: 'book' },
-        { name: 'Advanced Settings', icon: 'settings' },
-        { name: 'Drone Analysis', icon: 'camera' }
+        {
+            name: 'IoT Sensors',
+            icon: 'rss',
+            subItems: [
+                { name: 'Sensor Overview', targetTab: 'IoT Sensors' },
+                { name: 'Soil Moisture', targetTab: 'IoT Sensors' },
+                { name: 'Water Level', targetTab: 'IoT Sensors' }
+            ]
+        },
+        {
+            name: 'Action Plans',
+            icon: 'clipboard',
+            subItems: [
+                { name: 'Treatments', targetTab: 'Action Plan & Treatments' },
+                { name: 'Cost Estimation', targetTab: 'Cost Estimation' }
+            ]
+        },
+        {
+            name: 'Disease Analysis',
+            icon: 'microscope',
+            subItems: [
+                { name: 'Manual Check', targetTab: 'Manual Disease Check' },
+                { name: 'Live Camera', targetTab: 'Start Live Camera' },
+                { name: 'Drone Analysis', targetTab: 'Drone Analysis' }
+            ]
+        },
+        { name: 'Admin Drone Reports', icon: 'zap', targetTab: 'Admin Drone Reports' },
+        { name: 'Medicine Catalog', icon: 'settings' },
+        { name: 'Crop Advisory', icon: 'book', targetTab: 'Crop Advisory & Soil Guide' }
     ] : [
         { name: 'Home', icon: 'home' },
-        { name: 'Dashboard', icon: 'grid' },
-        { name: 'IoT Sensors', icon: 'rss' },
-        { name: 'Disease Analysis', icon: 'microscope' },
-        { name: 'Action Plan & Treatments', icon: 'clipboard' },
-        { name: 'Manual Disease Check', icon: 'upload' },
-        { name: 'Start Live Camera', icon: 'camera' },
-        { name: 'Crop Advisory & Soil Guide', icon: 'book' },
-        { name: 'Cost Estimation', icon: 'dollar' },
-        { name: 'Result', icon: 'clipboard' }
+        {
+            name: 'Dashboard',
+            icon: 'grid',
+            subItems: [
+                { name: 'Monitoring', targetTab: 'Dashboard' },
+                { name: 'Reports', targetTab: 'Reports' },
+                { name: 'Crop Advisory & Guide', targetTab: 'Crop Advisory & Soil Guide' }
+            ]
+        },
+        {
+            name: 'IoT Sensors',
+            icon: 'rss',
+            subItems: [
+                { name: 'Soil Moisture', targetTab: 'IoT Sensors' },
+                { name: 'Water Level', targetTab: 'IoT Sensors' },
+                { name: 'Temperature', targetTab: 'IoT Sensors' },
+                { name: 'Humidity', targetTab: 'IoT Sensors' }
+            ]
+        },
+        {
+            name: 'Action Plans',
+            icon: 'clipboard',
+            subItems: [
+                { name: 'Treatments', targetTab: 'Action Plan & Treatments' },
+                { name: 'Cost Estimation', targetTab: 'Cost Estimation' },
+                { name: 'History of Disease', targetTab: 'Disease History' }
+            ]
+        },
+        {
+            name: 'Disease Analysis',
+            icon: 'microscope',
+            subItems: [
+                { name: 'Manual Check', targetTab: 'Manual Disease Check' },
+                { name: 'Live Camera Check', targetTab: 'Start Live Camera' }
+            ]
+        }
     ];
 
     const renderContent = () => {
@@ -107,29 +168,37 @@ const Dashboard = () => {
             case 'Dashboard':
                 return <FarmersDashboard />;
             case 'User Controls':
-                return role === 'admin' ? <AdminDashboard /> : <div className="text-red-500">Access Denied</div>;
+                return role === 'admin' ? <AdminDashboard onGenerateReport={(farmer) => {
+                    setSelectedFarmerForReport(farmer);
+                    setActiveTab('Report Generator');
+                }} /> : <div className="text-red-500">Access Denied</div>;
+            case 'Report Generator':
+                return <AdminReportGenerator farmer={selectedFarmerForReport} onBack={() => setActiveTab('User Controls')} />;
             case 'Disease Analysis':
-                return <div className="max-w-4xl mx-auto"><ImageUpload farmId={farmId} onAnalysisComplete={handleAnalysisComplete} allowCamera={false} /></div>;
             case 'Manual Disease Check':
                 return <div className="max-w-4xl mx-auto"><ImageUpload farmId={farmId} onAnalysisComplete={handleAnalysisComplete} allowCamera={false} /></div>;
             case 'Start Live Camera':
-                // Pass a prop to force camera mode if supported, otherwise just show upload
                 return <div className="max-w-4xl mx-auto"><ImageUpload farmId={farmId} onAnalysisComplete={handleAnalysisComplete} defaultMode="camera" /></div>;
             case 'Action Plan & Treatments':
                 return <div className="max-w-4xl mx-auto h-full"><ActionPlan recommendation={recommendation} setActiveTab={setActiveTab} resetAnalysis={resetAnalysis} /></div>;
             case 'Crop Advisory & Soil Guide':
                 return <KnowledgeBase />;
             case 'IoT Sensors':
-                // Dedicated IoT Sensor View
                 return <IoTSensors />;
             case 'Cost Estimation':
                 return <CostEstimation />;
+            case 'Disease History':
+                return <DiseaseHistory farmId={farmId} />;
+            case 'Reports':
+                return <Reports farmId={farmId} />;
             case 'Result':
                 return <Result />;
-            case 'Advanced Settings':
+            case 'Medicine Catalog':
                 return <AdminSettings />;
             case 'Drone Analysis':
                 return <AdminDroneAnalysis />;
+            case 'Admin Drone Reports':
+                return <AdminDroneReportControl />;
             default:
                 return (
                     <div className="flex flex-col items-center justify-center h-[50vh] text-gray-500">
@@ -149,63 +218,118 @@ const Dashboard = () => {
                 user={user}
                 farmData={farmData}
                 onUpdate={() => {
-                    // Reload user from local storage
                     setUser(JSON.parse(localStorage.getItem('user')));
                     fetchFarmData();
                 }}
             />
 
-            {/* Background Image (Fixed) */}
+            {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <img src={drone_bg} className="w-full h-full object-cover" alt="Background" />
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
             </div>
 
-            {/* Sidebar (Left) - Glassmorphism */}
-            <aside className="w-72 h-full z-20 backdrop-blur-xl bg-white/10 border-r border-white/20 flex flex-col transition-all duration-300 shadow-2xl">
+            {/* Sidebar (Left) - Conditional Styling based on Role */}
+            <aside className={`w-72 h-full z-20 backdrop-blur-xl border-r border-white/10 flex flex-col transition-all duration-300 shadow-2xl
+                ${role === 'admin'
+                    ? 'bg-emerald-900/90' // Dark Green for Admin
+                    : 'bg-gradient-to-b from-emerald-500/90 to-teal-600/90' // Soft Green Gradient for User
+                }`}>
+
                 {/* Branding */}
-                <div className="p-6 flex items-center space-x-3 text-white border-b border-white/10 bg-white/5">
-                    <div className="bg-green-500 p-2 rounded-lg shadow-lg shadow-green-500/30">
+                <div className="p-6 flex items-center space-x-3 text-white border-b border-white/10 bg-black/5">
+                    <div className="bg-white/20 p-2 rounded-lg shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                         </svg>
                     </div>
                     <div>
                         <span className="text-lg font-bold tracking-wide block leading-none">Smart Agri</span>
-                        <span className="text-xs text-white/60 font-medium">Dashboard</span>
+                        <span className="text-xs text-white/80 font-medium">{role === 'admin' ? 'Admin Console' : 'User Panel'}</span>
                     </div>
                 </div>
 
-                {/* Role Badge */}
-                <div className="px-6 py-4">
-                    <div className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-center border ${role === 'admin' ? 'bg-orange-500/20 text-orange-200 border-orange-500/30' : 'bg-blue-500/20 text-blue-200 border-blue-500/30'}`}>
-                        {role === 'admin' ? 'Admin Panel' : 'User Panel'}
+                {/* Role Badge (Admin only, or simplified for User) */}
+                {role === 'admin' && (
+                    <div className="px-6 py-4">
+                        <div className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-center border bg-orange-500/20 text-orange-100 border-orange-500/30">
+                            Administrator
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Menu Items (Scrollable) */}
-                <nav className="flex-1 overflow-y-auto px-4 space-y-2 py-2 scrollbar-hide">
+                {/* Menu Items (Scrollable & Nested) */}
+                <nav className="flex-1 overflow-y-auto px-4 space-y-1 py-3 scrollbar-hide">
                     {menuItems.map((item) => (
-                        <button
-                            key={item.name}
-                            onClick={() => setActiveTab(item.name)}
-                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group text-base font-medium
-                                ${activeTab === item.name
-                                    ? 'bg-white/20 text-white shadow-lg backdrop-blur-md border border-white/20'
-                                    : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-                        >
-                            <Icon name={item.icon} className={`w-6 h-6 ${activeTab === item.name ? 'text-white' : 'text-white/70 group-hover:text-white'}`} />
-                            <span className="text-left">{item.name}</span>
-                        </button>
+                        <div key={item.name}>
+                            {/* Parent Item */}
+                            <button
+                                onClick={() => {
+                                    if (item.subItems) {
+                                        toggleMenu(item.name);
+                                    } else {
+                                        setActiveTab(item.targetTab || item.name);
+                                    }
+                                }}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium mb-1
+                                    ${activeTab === (item.targetTab || item.name) && !item.subItems
+                                        ? 'bg-white/20 text-white shadow-lg'
+                                        : 'text-white/80 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <Icon name={item.icon} className={`w-5 h-5 ${activeTab === (item.targetTab || item.name) ? 'text-white' : 'text-white/70 group-hover:text-white'}`} />
+                                    <span>{item.name}</span>
+                                </div>
+                                {item.subItems && (
+                                    <span className={`transform transition-transform duration-200 ${expandedMenus[item.name] ? 'rotate-180' : ''}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Sub Items */}
+                            {item.subItems && (
+                                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedMenus[item.name] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                    <div className="pl-4 space-y-1 border-l-2 border-white/20 ml-4 mb-2">
+                                        {item.subItems.map((sub) => (
+                                            <button
+                                                key={sub.name}
+                                                onClick={() => setActiveTab(sub.targetTab)}
+                                                className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-all duration-200
+                                                    ${activeTab === sub.targetTab
+                                                        ? 'bg-white/20 text-white font-bold'
+                                                        : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                                            >
+                                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                                                <span>{sub.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </nav>
 
-                {/* Footer User Profile */}
-                <div className="p-4 border-t border-white/10 bg-black/20">
-                    <div className="mb-3 px-1">
+                {/* Footer User Profile with Weather Widget (User Only) */}
+                <div className="p-4 border-t border-white/10 bg-black/10">
+                    {/* Weather Widget Mockup for Users */}
+                    {role !== 'admin' && (
+                        <div className="flex items-center space-x-3 mb-4 bg-white/10 p-3 rounded-xl border border-white/5">
+                            <div className="text-2xl">⛅</div>
+                            <div>
+                                <p className="text-sm font-bold text-white">25°C</p>
+                                <p className="text-[10px] text-white/70">Mostly Clear</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mb-2 px-1">
                         <button
                             onClick={() => setIsEditProfileOpen(true)}
-                            className="w-full text-xs text-blue-200 hover:text-white flex items-center space-x-2 transition-colors"
+                            className="w-full text-xs text-blue-100 hover:text-white flex items-center space-x-2 transition-colors"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -215,12 +339,12 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center justify-between space-x-2">
                         <div className="flex items-center space-x-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-white text-emerald-600 flex items-center justify-center font-bold text-lg shadow-lg shrink-0">
                                 {user?.username?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-white truncate">{user?.full_name || 'User'}</p>
-                                <p className="text-xs text-white/50 truncate">@{user?.username}</p>
+                                <p className="text-xs text-white/60 truncate">@{user?.username}</p>
                             </div>
                         </div>
                         <button
@@ -228,7 +352,7 @@ const Dashboard = () => {
                                 localStorage.removeItem('user');
                                 window.location.href = '/login';
                             }}
-                            className="text-red-400 hover:text-red-300 hover:bg-white/10 p-2 rounded-full transition-colors shrink-0"
+                            className="text-red-200 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors shrink-0"
                             title="Logout"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
