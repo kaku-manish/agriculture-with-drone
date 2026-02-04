@@ -31,9 +31,14 @@ jobs:
           npm ci
           npm run build
 
+      - name: Show build output (diagnose)
+        run: |
+          echo "Listing client/dist contents"
+          ls -la client/dist || true
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          # use the built-in GITHUB_TOKEN; repository must allow workflows to write
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer a user-provided PAT (GH_PAGES_PAT). If not set, fall back to GITHUB_TOKEN.
+          github_token: ${{ secrets.GH_PAGES_PAT || secrets.GITHUB_TOKEN }}
           publish_dir: ./client/dist
